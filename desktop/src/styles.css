@@ -48,10 +48,10 @@ kbd { font-family: inherit; }
 .app-shell { display: grid; grid-template-columns: 216px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { background: #141c1e; border-right: 1px solid #253032; position: fixed; top: 0; bottom: 116px; width: 216px; display: flex; flex-direction: column; padding: 36px 18px 0; }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 13px; }
-.brand strong { display: block; font-size: 28px; font-weight: 650; letter-spacing: 3px; line-height: 1.2; }
+.brand strong { display: block; font-size: 20px; font-weight: 650; letter-spacing: -.6px; line-height: 1.2; }
 .brand-period { color: var(--accent); }
 .brand small { font-size: 8px; letter-spacing: 1.65px; color: var(--muted); display: block; margin-top: 7px; }
-.brand-mark { display: flex; align-items: center; justify-content: center; gap: 4px; width: 38px; height: 45px; transform: rotate(-12deg); }
+.brand-mark { display: flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 3px; width: 27px; height: 38px; }
 .brand-mark i { background: var(--accent); border-radius: 4px; width: 5px; height: 20px; }
 .brand-mark i:nth-child(2) { height: 36px; }
 .brand-mark i:nth-child(3) { height: 28px; }

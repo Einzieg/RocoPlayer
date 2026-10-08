@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
-  <title id="title">Xianxu - Music, arranged for nine keys</title>
+  <title id="title">RocoPlayer - Music, arranged for nine keys</title>
   <desc id="desc">A navy and violet banner with nine keys and a flowing musical line.</desc>
   <defs>
     <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#111827"/><stop offset="1" stop-color="#31245a"/></linearGradient>
@@ -9,7 +9,7 @@
   <path d="M630 90 Q710 180 790 100 T970 100 T1190 75" fill="none" stroke="url(#accent)" stroke-width="3" opacity=".4"/>
   <circle cx="790" cy="100" r="7" fill="#67e8f9"/><circle cx="970" cy="100" r="7" fill="#c4b5fd"/>
   <text x="64" y="100" fill="#67e8f9" font-family="Segoe UI, sans-serif" font-size="16" letter-spacing="5">LOCAL FIRST / NINE KEYS</text>
-  <text x="60" y="180" fill="#f8fafc" font-family="Segoe UI, sans-serif" font-size="70" font-weight="700">Xianxu</text>
+  <text x="60" y="180" fill="#f8fafc" font-family="Segoe UI, sans-serif" font-size="70" font-weight="700">RocoPlayer</text>
   <text x="64" y="225" fill="#cbd5e1" font-family="Segoe UI, sans-serif" font-size="23">Your music. A new way to play.</text>
   <g fill="#f1f5f9">
     <rect x="674" y="165" width="42" height="100" rx="8"/><rect x="726" y="165" width="42" height="100" rx="8"/>

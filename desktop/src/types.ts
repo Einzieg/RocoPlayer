@@ -40,6 +40,7 @@ export interface ScoreDetail {
   mapping: KeyMapping[];
 }
 export interface AppState {
+  online_catalog?: OnlineCatalog | null;
   library: LibraryItem[];
   stop_sequence: number;
   current_id: string | null;
@@ -65,6 +66,8 @@ export interface AppState {
   queue_active: boolean;
 }
 export interface RpcParams {
+  online_search: { query: string; page: number };
+  online_download: { id: string };
   get_state: Record<string, never>;
   import_score: { path: string };
   add_text: { title: string; text: string };
@@ -89,3 +92,10 @@ export interface RpcParams {
 }
 export type RpcResult<M extends keyof RpcParams> = M extends 'get_state'
   ? AppState : M extends 'get_score' ? ScoreDetail : M extends 'audition' ? AuditionResult : unknown;
+
+export interface OnlineCatalog {
+  query: string;
+  page: number;
+  has_next: boolean;
+  items: { id: string; title: string; subtitle: string; author: string; format: string; url: string }[];
+}

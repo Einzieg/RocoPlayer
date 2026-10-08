@@ -1,8 +1,8 @@
 <div align="center">
 
-![Xianxu](docs/assets/banner.svg)
+![RocoPlayer](docs/assets/banner.svg)
 
-# 弦序 · Xianxu
+# RocoPlayer
 
 **把旋律整理成谱，把乐谱带进游戏。**
 
@@ -13,15 +13,23 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square)
 [![License](https://img.shields.io/badge/Original_code-MIT-8B5CF6?style=flat-square)](LICENSE)
-[![Checks](https://github.com/Einzieg/xianxu/actions/workflows/ci.yml/badge.svg)](https://github.com/Einzieg/xianxu/actions/workflows/ci.yml)
+[![Checks](https://github.com/Einzieg/RocoPlayer/actions/workflows/ci.yml/badge.svg)](https://github.com/Einzieg/RocoPlayer/actions/workflows/ci.yml)
 
-[快速开始](#快速开始) · [使用指南](docs/guide.md) · [安装包构建](docs/packaging.md) · [问题反馈](https://github.com/Einzieg/xianxu/issues)
+[快速开始](#快速开始) · [使用指南](docs/guide.md) · [安装包构建](docs/packaging.md) · [问题反馈](https://github.com/Einzieg/RocoPlayer/issues)
 
 </div>
 
 ---
 
 ## 一首歌，从导入到演奏
+
+### 在线乐谱
+
+在「在线乐谱」中搜索曲名或作者，也可浏览最新分享、翻页选择曲目。点击「下载到我的谱库」会下载 [RocoMusic 洛克乐谱](https://rocomusic.cn) 的公开 MIDI，保留原文件并适配到当前九键映射；不会自动播放。同一曲谱的相同文件不会重复入库，新版本作为独立曲目保留。
+
+搜索和下载在后台执行，可取消，失败会显示原因。当前通过网站公开页面和下载入口读取 MIDI，不需要登录，也不上传个人曲库；网站页面结构变化时可能需要更新客户端。其他格式暂不支持直接下载入库。
+
+RocoPlayer 为原「弦序」更名，应用标识和数据目录保持不变，继续读取现有曲库、设置。仓库已更名为 RocoPlayer；内部可执行文件名暂保留，以兼容现有启动脚本。
 
 ```text
 TXT / MIDI / 本地音频 → 保留原谱 → 自动九键编配 → 对比试听 → 游戏演奏
@@ -47,7 +55,7 @@ TXT / MIDI / 本地音频 → 保留原谱 → 自动九键编配 → 对比试�
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-git clone https://github.com/Einzieg/xianxu.git
+git clone https://github.com/Einzieg/RocoPlayer.git
 if ($LASTEXITCODE -ne 0) { throw 'Clone failed' }
 Set-Location xianxu
 uv sync --locked
@@ -58,7 +66,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed' }
 
 ### 独立安装包
 
-**[下载 Windows 安装包（Releases）](https://github.com/Einzieg/xianxu/releases)**，或参阅 [构建说明](docs/packaging.md)。安装包内置 Python 引擎、模型及依赖，终端用户不需要 Python/Node/Rust，系统仍需 WebView2。
+**[下载 Windows 安装包（Releases）](https://github.com/Einzieg/RocoPlayer/releases)**，或参阅 [构建说明](docs/packaging.md)。安装包内置 Python 引擎、模型及依赖，终端用户不需要 Python/Node/Rust，系统仍需 WebView2。
 
 首个公开版本为含 DD 的预览版，已通过构建、独立引擎及合成音频转谱测试；尚未完成干净 Windows 虚拟机安装验收。安装、升级前请保存曲谱并正常退出旧播放器。
 

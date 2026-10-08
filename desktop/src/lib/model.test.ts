@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { dismissAfterDelay } from './notifications.ts';
 import { runAuditionRequest } from './audition.ts';
 import { runTransport, transportAction } from './transport.ts';
 import {
@@ -14,6 +15,32 @@ test('timeline formatting clamps invalid values', () => {
   assert.equal(percent(1.8), 100);
   assert.equal(percent(-1), 0);
   assert.equal(percent(NaN), 0);
+});
+
+test('success notices dismiss after three seconds, not before', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let dismissed = 0;
+  dismissAfterDelay(true, () => dismissed++);
+  t.mock.timers.tick(2999);
+  assert.equal(dismissed, 0);
+  t.mock.timers.tick(1);
+  assert.equal(dismissed, 1);
+});
+
+test('persistent notices have no timer and replacement cancels the old timer', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let old = 0;
+  let next = 0;
+  assert.equal(dismissAfterDelay(false, () => old++), undefined);
+  const cleanup = dismissAfterDelay(true, () => old++);
+  t.mock.timers.tick(2000);
+  cleanup?.();
+  dismissAfterDelay(true, () => next++);
+  t.mock.timers.tick(1000);
+  assert.equal(old, 0);
+  assert.equal(next, 0);
+  t.mock.timers.tick(2000);
+  assert.equal(next, 1);
 });
 
 test('nine-key settings accept the exact compiler limits', () => {

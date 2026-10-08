@@ -6,16 +6,19 @@ import ScorePanel from './components/ScorePanel';
 import SettingsPage from './components/SettingsPage';
 import TranscribePage from './components/TranscribePage';
 import TextImport from './components/TextImport';
+import OnlinePage from './components/OnlinePage';
 import { useBackend, useScore, useShutdown } from './hooks';
 import { filterLibrary, formatTime, friendlyError, getLocks, hasTarget, MODES, percent, pitchName } from './lib/model';
 import { rpc, setCompact } from './lib/rpc';
 import { runTransport, transportAction } from './lib/transport';
 import { AUDITION_STOP_EVENT } from './lib/audition';
+import { dismissAfterDelay } from './lib/notifications';
 import type { LibraryItem, PlayMode, RpcParams } from './types';
 
-type Page = 'library' | 'transcribe' | 'settings';
+type Page = 'library' | 'online' | 'transcribe' | 'settings';
 const NAV: { id: Page; label: string; icon: IconName }[] = [
   { id: 'library', label: '我的谱库', icon: 'library' },
+  { id: 'online', label: '在线乐谱', icon: 'search' },
   { id: 'transcribe', label: '音频转谱', icon: 'audio' },
   { id: 'settings', label: '演奏设置', icon: 'settings' },
 ];
@@ -75,6 +78,17 @@ export default function App() {
     (displayPreview ? '仅检查时间轴 · 不发声 · 不发送按键' : targetReady ? '播放 / 继续后自动切回游戏' : '请先捕获目标，或启用无按键预览');
   const job = state.job;
   const showJob = job && (job.state === 'running' || dismissedJob !== `${job.id}:${job.state}`);
+
+  useEffect(() => dismissAfterDelay(notice?.kind === 'success', () => {
+    setNotice((current) => current === notice ? null : current);
+  }), [notice]);
+
+  // Polling returns a fresh job object; depend on identity/state, not the object.
+  const jobId = job?.id;
+  const jobState = job?.state;
+  useEffect(() => dismissAfterDelay(jobState === 'done' || jobState === 'cancelled', () => {
+    setDismissedJob(`${jobId}:${jobState}`);
+  }), [jobId, jobState]);
 
   async function task(label: string, work: () => Promise<boolean | void>, success?: string) {
     if (!connected || commandBusy.current) return false;
@@ -190,9 +204,9 @@ export default function App() {
   }
 
   return <div className={`app-shell ${compact ? 'compact-shell' : ''}`}>
-    {compact && <header className="compact-heading"><span><Icon name="music" size={15} />弦序 · 置顶小窗</span><button className="button secondary compact" disabled={Boolean(pending) || windowPending} onClick={() => changeWindow(false)} aria-label="展开谱库">展开谱库 <Icon name="expand" size={14} /></button></header>}
+    {compact && <header className="compact-heading"><span><Icon name="music" size={15} />RocoPlayer</span><button className="button secondary compact" disabled={Boolean(pending) || windowPending} onClick={() => changeWindow(false)} aria-label="展开谱库">展开谱库 <Icon name="expand" size={14} /></button></header>}
     <aside className="sidebar">
-      <a className="brand" href="#library" onClick={(event) => { event.preventDefault(); setPage('library'); }} aria-label="弦序，返回谱库"><span className="brand-mark"><i /><i /><i /><i /></span><span><strong>弦序<span className="brand-period">.</span></strong><small>NINE KEY PLAYER</small></span></a>
+      <a className="brand" href="#library" onClick={(event) => { event.preventDefault(); setPage('library'); }} aria-label="RocoPlayer，返回谱库"><span className="brand-mark"><i /><i /><i /><i /></span><span><strong>RocoPlayer</strong><small>洛克九键播放器</small></span></a>
       <div className="sidebar-label">你的音乐空间</div>
       <nav aria-label="主导航">{NAV.map((entry) => <button key={entry.id} className={`nav-item ${page === entry.id ? 'active' : ''}`} aria-current={page === entry.id ? 'page' : undefined} onClick={() => setPage(entry.id)}><Icon name={entry.icon} size={20} /><span>{entry.label}</span>{entry.id === 'library' && <span className="nav-count">{state.library.length}</span>}</button>)}</nav>
       <div className="sidebar-bottom"><div className="target-mini"><span className={`status-dot ${connected && targetReady ? 'online' : ''}`} /><span>{connected && targetReady ? '目标已捕获' : '尚未捕获目标'}</span></div><p title={state.target?.title}>{connected && state.target?.title ? state.target.title : '真实演奏前，请先连接目标窗口'}</p><div className="sidebar-footer"><span>DESKTOP / 01</span><span>{connected ? state.settings.backend : 'OFFLINE'}</span></div></div>
@@ -206,14 +220,15 @@ export default function App() {
       {listenerError && <div className="notice error-notice" role="alert"><Icon name="info" /><p>{listenerError}</p></div>}
       {closing && <div className={`notice ${shutdownError ? 'error-notice' : 'gold-notice'}`} role="alert"><Icon name="shield" /><div><strong>{shutdownError ? '关闭失败：尚未确认安全释放' : '正在关闭并释放按键与任务…'}</strong><p>{shutdownError || '新操作已锁定。等待宿主完成释放，请勿强制退出。'}</p>{shutdownError && <p>可再次停止或取消任务，然后重试关闭窗口。界面不会把请求成功误报为已经安全退出。</p>}<div className="button-row"><button className="button secondary compact" disabled={!connected || Boolean(pending)} onClick={() => void command('stop', {})}>再次停止 / 释放按键</button><button className="button secondary compact" disabled={!connected || Boolean(pending)} onClick={() => void command('cancel_job', {})}>再次取消任务</button></div></div></div>}
       {notice && <div className={`notice ${notice.kind === 'error' ? 'error-notice' : 'success-notice'}`} role={notice.kind === 'error' ? 'alert' : 'status'}><Icon name={notice.kind === 'error' ? 'info' : 'check'} size={18} /><p>{notice.message}</p><button className="icon-button" aria-label="关闭提示" onClick={() => setNotice(null)}><Icon name="close" size={17} /></button></div>}
-      {showJob && <section className={`job-banner ${job.state === 'error' ? 'job-error' : ''}`} aria-label="后台任务"><div className="job-icon"><Icon name={job.state === 'done' ? 'check' : job.kind === 'capture' ? 'target' : 'audio'} /></div><div className="job-info"><div><strong>{job.kind === 'capture' ? '捕获目标窗口' : job.kind === 'calibrate' ? '真实 DD 按键校准' : '音频转谱'}</strong><span>{job.state === 'running' ? `${percent(job.progress)}%` : job.state === 'done' ? '已完成' : job.state === 'cancelled' ? '已取消' : '任务失败'}</span></div><p role={job.state === 'error' ? 'alert' : undefined}>{job.error || job.message || '任务正在处理…'}{job.kind === 'capture' && job.state === 'running' ? ' · 请在 3 秒内切换到目标窗口，不会发送测试键。' : ''}</p>{job.state === 'running' && <progress max="1" value={Math.max(0, Math.min(1, job.progress))} aria-label="任务进度" />}</div>{job.state === 'running' ? <button className="button secondary compact" disabled={!connected || Boolean(pending)} onClick={() => void command('cancel_job', {})}>取消任务</button> : <button className="icon-button" aria-label="关闭任务结果" onClick={() => setDismissedJob(`${job.id}:${job.state}`)}><Icon name="close" size={18} /></button>}</section>}
+      {showJob && <section className={`job-banner ${job.state === 'error' ? 'job-error' : ''}`} aria-label="后台任务"><div className="job-icon"><Icon name={job.state === 'done' ? 'check' : job.kind === 'capture' ? 'target' : 'audio'} /></div><div className="job-info"><div><strong>{job.kind === 'capture' ? '捕获目标窗口' : job.kind === 'calibrate' ? '真实 DD 按键校准' : job.kind === 'online_search' ? '搜索在线乐谱' : job.kind === 'online_download' ? '下载在线乐谱' : '音频转谱'}</strong><span>{job.state === 'running' ? `${percent(job.progress)}%` : job.state === 'done' ? '已完成' : job.state === 'cancelled' ? '已取消' : '任务失败'}</span></div><p role={job.state === 'error' ? 'alert' : undefined}>{job.error || job.message || '任务正在处理…'}{job.kind === 'capture' && job.state === 'running' ? ' · 请在 3 秒内切换到目标窗口，不会发送测试键。' : ''}</p>{job.state === 'running' && <progress max="1" value={Math.max(0, Math.min(1, job.progress))} aria-label="任务进度" />}</div>{job.state === 'running' ? <button className="button secondary compact" disabled={!connected || Boolean(pending)} onClick={() => void command('cancel_job', {})}>取消任务</button> : <button className="icon-button" aria-label="关闭任务结果" onClick={() => setDismissedJob(`${job.id}:${job.state}`)}><Icon name="close" size={18} /></button>}</section>}
 
+      {page === 'online' && <OnlinePage catalog={state.online_catalog ?? null} locked={mutateLocked} onSearch={(query, page) => void command('online_search', { query, page })} onDownload={(id) => void command('online_download', { id })} onLibrary={() => setPage('library')} />}
       {page === 'library' && <div className="library-page">
-        <header className="page-heading"><div><div className="eyebrow">YOUR PERSONAL COLLECTION</div><h1>我的谱库<span className="title-dot">.</span></h1><p>收藏旋律，在九个键上重新相遇。</p></div><div className="button-row"><button className="button secondary" disabled={mutateLocked} onClick={() => setTextOpen(true)}><Icon name="text" size={17} />粘贴曲谱</button><button className="button primary" disabled={mutateLocked} onClick={importScore}><Icon name="plus" size={19} />导入曲谱</button></div></header>
+        <header className="page-heading"><div><h1>我的谱库</h1><p>选一首曲谱，开始演奏。</p></div><div className="button-row"><button className="button secondary" disabled={mutateLocked} onClick={() => setTextOpen(true)}><Icon name="text" size={17} />粘贴曲谱</button><button className="button primary" disabled={mutateLocked} onClick={importScore}><Icon name="plus" size={19} />导入曲谱</button></div></header>
         <section className="performance-banner"><div className="banner-icon"><Icon name="shield" size={24} /></div><div className="banner-copy"><h2>{displayPreview ? '只看时间轴，不发送按键' : targetReady && connected ? '目标就绪，等待你的下一段旋律' : '先连接目标，再安心演奏'}</h2><p>{displayPreview ? '无按键预览不会发声，也不会操作任何窗口。' : state.target && connected ? `${state.target.title} · ${state.target.state} · 失焦保护由后端执行` : '真实演奏将发送键盘输入。捕获后，请在播放倒计时内切回目标。'}</p></div><button className="button capture-button" disabled={mutateLocked} onClick={capture}><Icon name="target" size={16} />{targetReady ? '重新捕获' : '捕获目标'}<span>3s</span></button></section>
-        <section className="key-rack" aria-label="当前九键映射"><div className="key-rack-label"><span className="eyebrow">KEY MAPPING</span><strong>九键音域</strong><span>{connected ? '当前演奏映射' : '默认映射示意'}</span></div><div className="key-list">{state.settings.mapping.map((entry, index) => <div className={`key-tile ${state.playback.pressed.includes(entry.key) && connected ? 'pressed' : ''}`} key={`${entry.key}-${index}`}><span className="key-number">{String(index + 1).padStart(2, '0')}</span><kbd>{entry.key}</kbd><span>{pitchName(entry.pitch)} <small>{entry.pitch}</small></span></div>)}</div><button className="icon-button" title="编辑九键映射" aria-label="编辑九键映射" onClick={() => setPage('settings')}><Icon name="settings" size={18} /></button></section>
+        <details className="mapping-details"><summary>九键映射与实时按键</summary><section className="key-rack" aria-label="当前九键映射"><div className="key-rack-label"><span className="eyebrow">KEY MAPPING</span><strong>九键音域</strong><span>{connected ? '当前演奏映射' : '默认映射示意'}</span></div><div className="key-list">{state.settings.mapping.map((entry, index) => <div className={`key-tile ${state.playback.pressed.includes(entry.key) && connected ? 'pressed' : ''}`} key={`${entry.key}-${index}`}><span className="key-number">{String(index + 1).padStart(2, '0')}</span><kbd>{entry.key}</kbd><span>{pitchName(entry.pitch)} <small>{entry.pitch}</small></span></div>)}</div><button className="icon-button" title="编辑九键映射" aria-label="编辑九键映射" onClick={() => setPage('settings')}><Icon name="settings" size={18} /></button></section></details>
         <div className="library-grid"><section className="panel library-panel" aria-labelledby="collection-heading"><div className="panel-heading"><h2 id="collection-heading">全部曲目 <span className="count-pill">{state.library.length}</span></h2><span className="eyebrow">{connected ? 'PERSISTENT LIBRARY' : 'YOUR LIBRARY'}</span></div><label className="search-box"><Icon name="search" size={18} /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索曲名或来源…" aria-label="搜索谱库" /><span>TXT / MIDI</span></label>
-          {state.library.length === 0 ? <div className="library-empty"><div className="empty-art"><span /><span /><span /><Icon name="music" size={39} /></div><h3>每一份谱库，都始于一段旋律</h3><p>导入 TXT、MIDI 曲谱，<br />或将音频转为可演奏的九键谱。</p><button className="button secondary" disabled={mutateLocked} onClick={importScore}><Icon name="import" size={17} />导入第一首曲谱</button><button className="text-button" onClick={() => setPage('transcribe')}>试试音频转谱<Icon name="arrow" size={15} /></button></div> : list.length === 0 ? <div className="search-empty"><Icon name="search" size={30} /><h3>没有找到匹配曲目</h3><p>换个关键词，或清空搜索再看看。</p><button className="text-button" onClick={() => setSearch('')}>清空搜索</button></div> :
+          {state.library.length === 0 ? <div className="library-empty"><div className="empty-art"><span /><span /><span /><Icon name="music" size={39} /></div><h3>还没有曲谱</h3><p>导入 TXT、MIDI 曲谱，<br />或将音频转为可演奏的九键谱。</p><button className="button secondary" disabled={mutateLocked} onClick={importScore}><Icon name="import" size={17} />导入第一首曲谱</button><button className="text-button" onClick={() => setPage('online')}>去在线乐谱找一首<Icon name="arrow" size={15} /></button></div> : list.length === 0 ? <div className="search-empty"><Icon name="search" size={30} /><h3>没有找到匹配曲目</h3><p>换个关键词，或清空搜索再看看。</p><button className="text-button" onClick={() => setSearch('')}>清空搜索</button></div> :
             <div className="track-list" role="list" aria-label="曲谱列表">{list.map((item, index) =>
               <div key={item.id} role="listitem" className={`track-row ${item.id === selectedId ? 'selected' : ''}`}>
                 <button className="track-select" disabled={mutateLocked} aria-current={item.id === selectedId ? 'true' : undefined} onClick={() => { void command('select', { id: item.id }); }}>

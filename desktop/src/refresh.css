@@ -1,0 +1,39 @@
+/* Shared library/online layout, without changing the compact player's geometry. */
+.page-heading { margin: 20px 0; }
+.page-heading h1 { font-size: 28px; letter-spacing: -.5px; }
+.page-heading p { margin-top: 8px; }
+.performance-banner { padding: 14px 18px; margin-bottom: 12px; }
+.banner-icon { display: none; }
+.banner-copy h2 { font-size: 14px; }
+.banner-copy p { font-size: 12px; }
+.mapping-details { margin: 0 0 18px; color: var(--muted); }
+.mapping-details summary { cursor: pointer; padding: 10px 2px; font-size: 12px; }
+.mapping-details .key-rack { margin: 8px 0; }
+.library-panel .eyebrow, .sidebar-label, .sidebar-footer, .library-footnote { display: none; }
+.sidebar nav { margin-top: 36px; }
+.library-bottom-note { margin-top: 14px; }
+.library-empty { overflow: auto; min-height: 0; padding: 16px 8px; }
+.library-empty .empty-art { height: 60px; flex-shrink: 0; margin-bottom: 12px; transform: scale(.75); }
+.online-search { display: flex; gap: 10px; align-items: center; }
+.online-search .search-box { flex: 1; margin: 0; }
+.online-hint { color: var(--muted); font-size: 12px; line-height: 1.8; margin: 14px 0 22px; }
+.online-results { color: var(--muted); margin: 16px 0; font-size: 12px; }
+.online-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.online-card { display: flex; flex-direction: column; padding: 20px; min-width: 0; }
+.online-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.online-art { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 14px; background: #243a36; color: var(--accent); }
+.online-card h2 { font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; margin: 0 0 8px; }
+.online-card p, .online-card small { color: var(--muted); line-height: 1.7; overflow-wrap: anywhere; }
+.online-card p { margin: 0 0 6px; font-size: 12px; }
+.online-card small { font-size: 11px; margin-bottom: 24px; }
+.online-card .button { margin-top: auto; width: 100%; }
+.online-empty { text-align: center; padding: 60px 24px; color: var(--muted); }
+.online-empty h2 { font-size: 18px; color: #e4ebe8; margin: 20px 0 10px; }
+.online-empty p { font-size: 13px; }
+.online-pagination { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 28px 0; }
+@media (max-width: 1100px) { .online-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+  .online-grid { grid-template-columns: 1fr; }
+  .online-search { flex-wrap: wrap; }
+  .online-search .search-box { flex-basis: 100%; }
+}

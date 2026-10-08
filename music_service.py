@@ -1,7 +1,9 @@
 """Long-lived JSON-lines engine for the Tauri player. Stdout is protocol only."""
 
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, replace
+import hashlib
+import tempfile
 import ctypes
 import json
 import math
@@ -51,6 +53,7 @@ class MusicService:
         self.job_thread = None
         self.calibration_sink = None
         self.notice = ""
+        self.online_catalog = None
         self.listener = None
         self.actions = queue.Queue()
         self.monitor_thread = None
@@ -100,7 +103,7 @@ class MusicService:
                 "settings": self.library.settings,
                 "target": {"title": self.target.title, "state": self.target.state()} if self.target else None,
                 "playback": status, "job": dict(self.job) if self.job else None, "queue_active": self.queue_active,
-                "stop_sequence": self.stop_sequence}
+                "stop_sequence": self.stop_sequence, "online_catalog": self.online_catalog}
 
     def handle(self, method, params=None):
         params = params or {}
@@ -153,6 +156,15 @@ class MusicService:
                 if type(params.get("preview")) is not bool:
                     raise ScoreError("预览模式必须为布尔值")
                 self.preview = params["preview"]
+            elif method == "online_search":
+                self._editable()
+                self.online_catalog = None
+                self._start_job("online_search", lambda: self._online_search(params))
+            elif method == "online_download":
+                self._editable()
+                from music_online import score_id
+                identity = score_id(params.get("id"))
+                self._start_job("online_download", lambda: self._online_download(identity))
             elif method == "import_score":
                 self._editable()
                 path = Path(params["path"])
@@ -411,6 +423,46 @@ class MusicService:
 
         self.job_thread = threading.Thread(target=run, name=f"music-{kind}", daemon=True)
         self.job_thread.start()
+
+    def _online_search(self, params):
+        from music_online import catalog
+        self._progress(0.1, "正在读取洛克乐谱")
+        result = catalog(params.get("query", ""), params.get("page", 1), self.job_stop)
+        with self.lock:
+            if not self.job_stop.is_set():
+                self.online_catalog = result
+                self.job["message"] = f"已加载 {len(result['items'])} 首在线曲谱"
+
+    def _online_download(self, identity):
+        from music_online import download, ORIGIN
+        self._progress(0.1, "正在下载 MIDI 原谱")
+        data, title, url = download(identity, self.job_stop)
+        directory = self.library.path.parent / "online-scores"
+        directory.mkdir(exist_ok=True)
+        digest = hashlib.sha256(data).hexdigest()
+        destination = directory / f"{identity}-{digest[:16]}.mid"
+        with tempfile.NamedTemporaryFile(suffix=".mid", dir=directory, delete=False) as file:
+            temporary = Path(file.name)
+            file.write(data)
+        try:
+            source = replace(load_midi(temporary), title=title)
+            self._progress(0.7, "校验 MIDI 并适配当前九键音域")
+            item = self.library.arrange(source, str(destination), self.job_stop, texture="chords")
+            item["provenance"] = {"site": ORIGIN, "score_id": identity, "url": url, "sha256": digest}
+            with self.lock:
+                if self.job_stop.is_set():
+                    return
+                duplicate = next((old for old in self.library.items
+                                  if old.get("provenance", {}).get("score_id") == identity
+                                  and old.get("provenance", {}).get("sha256") == digest), None)
+                if duplicate:
+                    self.job["message"] = "该版本已在本地谱库，无需重复下载"
+                    return
+                temporary.replace(destination)
+                self.library.add(item)
+                self.job["message"] = f"已下载并导入：{title}"
+        finally:
+            temporary.unlink(missing_ok=True)
 
     def _transcribe(self, path, engine, register="auto", texture="melody"):
         source = transcribe_audio(path, stop=self.job_stop, engine=engine,
