@@ -24,6 +24,11 @@ containing the DLL, INF, CAT, SYS, or vendor installer.
 
 ## Other dependencies
 
+DD-enabled builds also place Microsoft Visual C++ runtime DLLs next to the
+vendor installer, copied unchanged from the packaged engine. These Microsoft
+components retain their original redistribution terms, not this project's MIT
+license. The build checks their Microsoft signatures and x64 architecture.
+
 Tauri, React, Python, NumPy, SciPy, ONNX Runtime, SoundFile, SoundCard, mido,
 CustomTkinter, pynput, PyAutoGUI, PyInstaller and their dependencies retain their
 own licenses. See the locked manifests and their distributions' license files.

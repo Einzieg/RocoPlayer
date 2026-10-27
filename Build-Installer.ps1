@@ -45,6 +45,7 @@ try {
             }
             Copy-Item -LiteralPath $source -Destination (Join-Path $ddStage $file)
         }
+        & "$root/packaging/Stage-DDRuntime.ps1" -EngineDirectory "$stage/runtime/rock-music-engine" -DriverDirectory "$ddStage/drv"
         $resources[$ddStage + '/'] = 'drivers/dd/'
     }
     $config = @{

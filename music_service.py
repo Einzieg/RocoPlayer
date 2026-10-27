@@ -1,5 +1,11 @@
 """Long-lived JSON-lines engine for the Tauri player. Stdout is protocol only."""
 
+import sys
+
+if __name__ == '__main__' and '--dd-setup' in sys.argv:
+    from dd_setup import main as dd_setup_main
+    raise SystemExit(dd_setup_main())
+
 import argparse
 from dataclasses import asdict, replace
 import hashlib
@@ -10,7 +16,6 @@ import math
 import os
 from pathlib import Path
 import queue
-import sys
 import threading
 import time
 
